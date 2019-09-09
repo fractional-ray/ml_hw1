@@ -120,10 +120,10 @@ def recursive_tree_train(data, labels, depth, max_depth, num_classes):
         node['predict'] = max(labels)
         return node 
 
-    D_left = {}
+    D_left = []
     left_values = []
 
-    D_right = {}
+    D_right = []
     right_values = []
 
     gain_array = calculate_information_gain(data, labels)
