@@ -120,12 +120,10 @@ def recursive_tree_train(data, labels, depth, max_depth, num_classes):
         node['predict'] = max(labels)
         return node 
 
-   # print(data.shape)
-    #print(labels.shape)
-    D_left = []
+    D_left = {}
     left_values = []
 
-    D_right = []
+    D_right = {}
     right_values = []
 
     gain_array = calculate_information_gain(data, labels)
@@ -171,6 +169,21 @@ def recursive_tree_train(data, labels, depth, max_depth, num_classes):
         
     return node
 
+def predict(sample, model):
+    
+    if 'predict' in model:
+        return model['predict']
+
+    ## TO-DO:
+    ## There is a bug here when Tree is made it creates an array not another dictionary
+    test = model['test']
+    test = 0
+    feature = sample[test]
+    if feature == False:
+        return predict(sample, model['left'])
+    else:    
+        return predict(sample, model['right'])
+
 
 def decision_tree_predict(data, model):
     """Predict most likely label given computed decision tree in model.
@@ -183,20 +196,10 @@ def decision_tree_predict(data, model):
     :rtype: array_like
     """
     # TODO: INSERT YOUR CODE FOR COMPUTING THE DECISION TREE PREDICTIONS HERE
-    #print(model)
     labels = [] 
-    print (data['right'])
-    if len(data["right"]) == 1 or len(data['left']) == 1:
-        return labels.append(data["predict"]) 
-
-    w = data["test"] 
     for sample in data.T:
-        if sample['w'] == False and len(data["left"]) > 1:
-            decision_tree_predict(data["left"], model)
-        else:
-            decision_tree_predict(data["right"], model)
-            
-    
-    lables = np.array(labels)
-    
-    return labels
+        labels.append(predict(sample,model))
+
+    labels = np.array(labels)
+    return predict(sample,model)
+
