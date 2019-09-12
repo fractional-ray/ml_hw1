@@ -115,7 +115,7 @@ def recursive_tree_train(data, labels, depth, max_depth, num_classes):
     # TODO: INSERT YOUR CODE FOR LEARNING THE DECISION TREE STRUCTURE HERE
 
     node = {}
-    if len(set(labels)) == 1 or depth == max_depth:
+    if len(set(labels)) == 1 or depth == max_depth - 1:
         #node[0] = max(labels)
         node['predict'] = max(labels)
         return node 
@@ -128,23 +128,30 @@ def recursive_tree_train(data, labels, depth, max_depth, num_classes):
 
     gain_array = calculate_information_gain(data, labels)
     w = np.argmax(gain_array)
+    #print(w)
     node['test'] = w
-    for sample in data.T:
+    i = -1
+    #for sample in data.T:
+       # i += 1
+    for index in range(len(data.T)):
+        sample = data.T[index,:]
         if sample[w] == False:
             D_left.append(sample)
-            left_values.append(labels[w])
+            left_values.append(labels[index])
         else:
             D_right.append(sample)
-            right_values.append(labels[w])
+            right_values.append(labels[index])
 
     D_left = np.array(D_left)
-    node["left"] = D_left.T
+    #node["left"] = D_left.T
+    data_left = D_left.T
     left_values = np.array(left_values)
     #print("Printing shape of leftvalues")
     #print(left_values)
 
     D_right = np.array(D_right)
-    node["right"] = D_right.T
+    #node["right"] = D_right.T
+    data_right = D_right.T
     right_values = np.array(right_values)
     #print("Printing left") 
     #print(D_left)
@@ -155,9 +162,16 @@ def recursive_tree_train(data, labels, depth, max_depth, num_classes):
     #print(D_right.shape)
 
 
-    node_left = recursive_tree_train(node['left'], left_values, depth + 1, max_depth, num_classes)
-    node_right = recursive_tree_train(node['right'], right_values, depth + 1, max_depth, num_classes)
-
+    #node_left = recursive_tree_train(node['left'], left_values, depth + 1, max_depth, num_classes)
+    node["left"] = recursive_tree_train(data_left, left_values, depth + 1, max_depth, num_classes)
+    #recursive_tree_train(node['left'], left_values, depth + 1, max_depth, num_classes)
+    #node["right"] = recursive_tree_train(node['right'], right_values, depth + 1, max_depth, num_classes)
+    #recursive_tree_train(node['right'], right_values, depth + 1, max_depth, num_classes)
+    node["right"] = recursive_tree_train(data_right, right_values, depth + 1, max_depth, num_classes)
+    #node_right = recursive_tree_train(node['right'], right_values, depth + 1, max_depth, num_classes)
+    
+    #node.update(node_right)
+    #node.update(node_left)
     #print(gain_array)
     #max_gain = max(gain_array)
     #pos = [item for item in range(len(gain_array)) if max_gain == gain_array[item]]
@@ -177,7 +191,6 @@ def predict(sample, model):
     ## TO-DO:
     ## There is a bug here when Tree is made it creates an array not another dictionary
     test = model['test']
-    test = 0
     feature = sample[test]
     if feature == False:
         return predict(sample, model['left'])
@@ -201,5 +214,6 @@ def decision_tree_predict(data, model):
         labels.append(predict(sample,model))
 
     labels = np.array(labels)
-    return predict(sample,model)
+    #return predict(sample,model)
+    return labels
 
