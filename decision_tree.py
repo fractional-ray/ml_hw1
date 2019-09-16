@@ -115,7 +115,7 @@ def recursive_tree_train(data, labels, depth, max_depth, num_classes):
     # TODO: INSERT YOUR CODE FOR LEARNING THE DECISION TREE STRUCTURE HERE
 
     node = {}
-    if len(set(labels)) == 1 or depth == max_depth or len(labels) == 2:
+    if len(set(labels)) == 1 or depth == max_depth - 1 or len(labels) == 2:
         node['predict'] = max(labels)
         return node 
 
