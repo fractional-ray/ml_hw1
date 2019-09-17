@@ -212,12 +212,11 @@ def decision_tree_predict(data, model):
     :return: length n numpy array of the predicted class labels
     :rtype: array_like
     """
-    # TODO: INSERT YOUR CODE FOR COMPUTING THE DECISION TREE PREDICTIONS HERE
     labels = [] 
+    #Going through labels to make prediction
     for sample in data.T:
         labels.append(predict(sample,model))
 
     labels = np.array(labels)
-    #return predict(sample,model)
     return labels
 
