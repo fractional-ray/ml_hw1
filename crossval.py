@@ -3,6 +3,24 @@ from __future__ import division
 import numpy as np
 
 
+#
+# This function will yeild the train and test indices for the k-folds to make sure that it is the same size
+#
+def k_fold(n_splits, data, examples_per_fold,ideal_length,indices,n):
+    count = 0
+    for fold in range(n_splits):
+        start, stop = count, count + examples_per_fold
+        test_indices = indices[start:stop]
+        # Creating an array of booleans of the size of the data so we can have a not to flip them all
+        test = np.zeros(n,dtype=np.bool)
+        test[test_indices] = True 
+        train_index = indices[np.logical_not(test)]
+        test_index = indices[test]
+        yield train_index, test_index
+        count = stop
+
+
+
 def cross_validate(trainer, predictor, all_data, all_labels, folds, params):
     """Perform cross validation with random splits.
 
@@ -23,29 +41,31 @@ def cross_validate(trainer, predictor, all_data, all_labels, folds, params):
     :return: tuple containing the average score and the learned models from each fold
     :rtype: tuple
     """
+    
+    
     scores = np.zeros(folds)
-
+    
     d, n = all_data.shape
-
-    indices = np.array(range(n), dtype=int)
-
-    # pad indices to make it divide evenly by folds
+    #
+    # Creating indecies and getting the number of example per fold to pass the k_fold function
+    #
+    indices = np.arange(n)
     examples_per_fold = int(np.ceil(n / folds))
     ideal_length = int(examples_per_fold * folds)
-    # use -1 as an indicator of an invalid index
-    indices = np.append(indices, -np.ones(ideal_length - indices.size, dtype=int))
-    assert indices.size == ideal_length
+    scores = ()
+    models = ()
 
-    indices = indices.reshape((examples_per_fold, folds))
+    #
+    # Going through the different folds. I created a generator for k_folds so I can iterate over it.
+    #
+    for train_index, test_index in k_fold(folds, all_data, examples_per_fold,ideal_length,indices,n):
+        x_train, x_test = all_data.T[train_index], all_data.T[test_index]
+        y_train, y_test = all_labels[train_index], all_labels[test_index]
+        model = trainer(x_train.T, y_train,params)
+        predictions = predictor(x_test.T, model)
+        scores = scores + (np.mean(predictions == y_test),)
+        models = models + (models,)
     
-    models = []
-
-    # TODO: INSERT YOUR CODE FOR CROSS VALIDATION HERE
-    for fold in range(folds):
-        fold_data = all_data[:,examples_per_fold]
-        fold_labels = all_labels[:,examples_per_fold]
-        model = trainer(fold_data, fold_labels, params)
-        for 
 
     score = np.mean(scores)
     

@@ -1,6 +1,7 @@
 """This module includes methods for training and predicting using decision trees."""
 import numpy as np
 import scipy as sp
+from collections import Counter
 
 def calculate_information_gain(data, labels):
     """
@@ -115,31 +116,59 @@ def recursive_tree_train(data, labels, depth, max_depth, num_classes):
     # TODO: INSERT YOUR CODE FOR LEARNING THE DECISION TREE STRUCTURE HERE
 
     node = {}
-    if len(set(labels)) == 1 or depth == max_depth - 1 or len(labels) == 2:
-        node['predict'] = max(labels)
-        return node 
+    
+    #
+    # Base Case:
+    #           This will stop if labels have the same category or we have reached max depth. I had to add an additional condition if we have two indices and if they both
+    #           go down the same tree
+    #
+    if len(set(labels)) == 1 or depth == max_depth: 
+        common = Counter(labels)
+        node['predict'] = common.most_common(1)[0][0]
+        return node
 
+    #Initializing data for the right side and left side
     D_left = []
     left_values = []
 
     D_right = []
     right_values = []
 
+    # Calculting information gain and getting the index and saving this.
     gain_array = calculate_information_gain(data, labels)
+    
     w = np.argmax(gain_array)
     node['test'] = w
-    for index in range(len(data.T)):
-        sample = data.T[index,:]
+   
+
+    #
+    # Checking to see if the value is near zero of so just predict
+    #
+    if gain_array[w] <= 9.93018445e-10:
+        common = Counter(labels)
+        node['predict'] = common.most_common(1)[0][0]
+        return node
+    
+    #Iterating through the data to split the data
+    #Finding the feature to split on and finding what side of the tree it goes down
+    index = 0 
+    #if not_worth_split == False:
+    for sample in data.T:
         if sample[w] == False:
             D_left.append(sample)
             left_values.append(labels[index])
+            index += 1
         else:
             D_right.append(sample)
             right_values.append(labels[index])
+            index += 1
 
 
     
 
+    #
+    # Saving the data and transposing it back to have proper calculations for information gain
+    #
     D_left = np.array(D_left)
     data_left = D_left.T
     left_values = np.array(left_values)
@@ -148,6 +177,7 @@ def recursive_tree_train(data, labels, depth, max_depth, num_classes):
     data_right = D_right.T
     right_values = np.array(right_values)
     
+    #Recusion calls
     node["left"] = recursive_tree_train(data_left, left_values, depth + 1, max_depth, num_classes)
     node["right"] = recursive_tree_train(data_right, right_values, depth + 1, max_depth, num_classes)
         
@@ -158,10 +188,14 @@ def predict(sample, model):
     if 'predict' in model:
         return model['predict']
 
-    ## TO-DO:
-    ## There is a bug here when Tree is made it creates an array not another dictionary
+
+    # Getting the test feature from the model and selecting it from our model
     test = model['test']
     feature = sample[test]
+    
+    #
+    # check and go down the right appropriate subtree
+    #
     if feature == False:
         return predict(sample, model['left'])
     else:    
