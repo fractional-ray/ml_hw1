@@ -10,7 +10,6 @@ def prob(data, alpha, d, n):
        counts = np.unique(feature, return_counts = True)
        true_counts = counts[1][1]
        probabilites.append((true_counts + alpha) / (total + 2 * alpha))
-    #obabilites = (count[0] + alpha) / (total + 2 * alpha)
     return probabilites
 
 
@@ -22,32 +21,31 @@ def find_classes(labels):
             probabilites[y_classes].append(y)
         else:
             probabilites[y_classes] = [y]
-
     return probabilites
 
-def feature_probs(data,dict_labels):
-    fb = defaultdict(list)
-    for y in dict_labels:
-        if y not in fb:
-            fb[y] = []
 
-        feature_index = dict_labels[y]
-        tmp_data = np.ndarray(shape=(len(feature_index),5000))
-        print(len(dict_labels))
-        for index in range(len(feature_index)):
-            feature = data.T[:,index]
-            #feature = data[:,index]
-            #tmp_data[index] = feature 
-        #print(np.unique(tmp_data, return_counts = True))
-            counts = np.unique(feature, return_counts = True)
-            print(counts)
-            total = sum(counts[1])
-            true = counts[1][1]
-            prob = true/float(total)
-            print(prob)
-            fb[y].append(prob)
+def feature_probs(data, dict_labels, labels, alpha):
+    fp = defaultdict(list)
+    tmp_dict = defaultdict(list)
+    tmp_arr = []
 
-    return fb 
+    #transpose data to access samples
+    data = data.T
+    for index in range(len(data)):
+        tmp_dict[labels[index]].append(data[index])
+
+    for index in range(len(tmp_dict)):
+        fp[index] = ((sum(tmp_dict[index])) + alpha)/(len(tmp_dict[index]) + 2*alpha)
+
+        #Calculate the probability of each label and append it to list of all label probabilities
+        tmp_arr.append((len(tmp_dict[index]) + alpha)/(len(data)+len(tmp_dict)*alpha))
+
+    #add probabilities of labels to new dictionary key
+    length = len(fp)
+    fp[length] = tmp_arr
+    #dictionary index 20 should now hold the ordered label probabilities
+
+    return fp
 
 def conditional_prob(prob_A,prob_B):
     return (prob_A * prob_B)/(prob_A)
@@ -66,60 +64,47 @@ def naive_bayes_train(train_data, train_labels, params):
     """
     alpha = params['alpha']
     
+    d, n = train_data.shape
     cond_prob = []
     cond_prob_not = []
 
     labels = np.unique(train_labels)
-    #probs = prob(train_labels,alpha)
-    d, n = train_data.shape
     num_classes = labels.size
     probs = prob(train_data, alpha, d, n)
 
 
     dict_labels = find_classes(train_labels)
-    dict_probs = feature_probs(train_data, dict_labels)
-    #for x in range(d):
-    #    y = (x + 1) % num_classes
-    #    cond_prob.append(conditional_prob(probs[x],probs[y]))
-    #    cond_prob_not.append(conditional_prob(1 - probs[x] , 1 - probs[y]))
-    #    cond_prob[1] = conditional_prob(probs[x],probs[index])
-
-    # TODO: INSERT YOUR CODE HERE TO LEARN THE PARAMETERS FOR NAIVE BAYES
+    dict_probs = feature_probs(train_data, dict_labels, train_labels, alpha)
     
     model = {}
     model["conditions"] = cond_prob 
-    model["priors"] = cond_prob_not 
+    model["priors"] = cond_prob_not
+
 
     return dict_probs
 
 
 def bayes_prediction(sample, model):
-    #prior = model["priors"]
-    #conditions = model["conditions"]
-    total = 1
-    bayes_probility = []
-    for key in model:
-        class_prob = model[key]
-        #print(class_prob) 
-        #for feature in range(len(sample)):
-        for feature in range(len(class_prob) - 1):
-            if sample[feature] == False:
-                prob = 1 - class_prob[feature]
-            else:
-                prob = class_prob[feature]
-            total = total * prob
-        
-        bayes_probility.append( np.log(total))
-        #if word == False:
-        #    value = np.log(prior[index])
-        #else:
-        #    value = np.log(conditions[index])
-        
-        #total += total *  value
 
-        #bayes_probility.append(total)
-        
-    return np.argmax(bayes_probility)
+    bayes_prob = []
+    tmp_int = 0;
+    #for all labels in the model (expect last inde which is label probailities)
+    for key in range(len(model) - 1):
+        #for all features in each label
+        for index in range(len(model[key])):
+            #take the log of each probabilty and add them up for total probability of the label
+            if(sample[index] == True):
+                tmp_int += model[key][index]
+            else:
+                tmp_int += 1-model[key][index]
+
+        #add probability of label
+        tmp_int += model[len(model)-1][key]
+        #add total probaility for label to array and clear
+        bayes_prob.append(tmp_int)
+        tmp_int = 0
+
+    return np.argmax(bayes_prob)
 
 
 
@@ -135,12 +120,10 @@ def naive_bayes_predict(data, model):
     """
 
     prediction = []
+
     for index in range(len(data.T)):
         sample = data.T[index,:]
         prediction.append(bayes_prediction(sample,model))
 
-    print(prediction)
     return prediction
 
-    # TODO: INSERT YOUR CODE HERE FOR USING THE LEARNED NAIVE BAYES PARAMETERS
-    # TO CLASSIFY THE DATA
